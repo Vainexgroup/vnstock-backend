@@ -1,18 +1,20 @@
 """
 VNStockAI — FastAPI Backend
-Tích hợp vnstock để lấy dữ liệu HOSE/HNX real-time + lịch sử giá
 """
 import logging
+import os
+import httpx
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import uvicorn
 
 from app.config import settings, CORS_ORIGINS
 from app.routers import stocks, market
 
 logging.basicConfig(
-    level=getattr(logging, settings.LOG_LEVEL),
+    level=getattr(logging, settings.LOG_LEVEL, "INFO"),
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
 logger = logging.getLogger(__name__)
@@ -20,35 +22,19 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("🚀 VNStockAI API đang khởi động...")
-    logger.info(f"   CORS origins: {settings.CORS_ORIGINS}")
-    logger.info(f"   Docs: http://localhost:{settings.PORT}/docs")
+    logger.info("VNStockAI API starting...")
     yield
-    logger.info("👋 VNStockAI API đang tắt...")
+    logger.info("VNStockAI API shutting down...")
 
 
 app = FastAPI(
     title="VNStockAI API",
-    description="""
-## API phân tích chứng khoán Việt Nam
-
-**Tính năng:**
-- 📊 Dữ liệu lịch sử giá (OHLCV) từ HOSE/HNX/UPCOM
-- ⚡ Giá realtime & intraday ticks
-- 🏢 Thông tin công ty, báo cáo tài chính
-- 📈 Chỉ số thị trường (VN-Index, HNX-Index)
-- 🔍 Screener cổ phiếu theo tiêu chí
-- 🏆 Top tăng/giảm mạnh nhất
-
-**Nguồn dữ liệu:** vnstock3 (TCBS, VCI, SSI)
-    """,
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
 )
 
-# ── CORS ────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
@@ -57,33 +43,70 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Routers ──────────────────────────────────────────────────────────
-app.include_router(stocks.router, prefix="/api/stocks", tags=["📊 Cổ phiếu"])
-app.include_router(market.router, prefix="/api/market", tags=["📈 Thị trường"])
+app.include_router(stocks.router, prefix="/api/stocks", tags=["Stocks"])
+app.include_router(market.router, prefix="/api/market", tags=["Market"])
 
 
-@app.get("/", tags=["🔧 Health"])
+@app.get("/")
 def root():
-    return {
-        "service": "VNStockAI API",
-        "version": "1.0.0",
-        "status": "running",
-        "endpoints": {
-            "docs": "/docs",
-            "stocks_history": "/api/stocks/{symbol}/history",
-            "stocks_price":   "/api/stocks/{symbol}/price",
-            "stocks_info":    "/api/stocks/{symbol}/info",
-            "stocks_finance": "/api/stocks/{symbol}/financials",
-            "screener":       "/api/stocks/screener",
-            "market_indices": "/api/market/indices",
-            "top_movers":     "/api/market/top-movers",
-        }
-    }
+    return {"service": "VNStockAI API", "version": "1.0.0", "status": "running"}
 
 
-@app.get("/health", tags=["🔧 Health"])
+@app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.post("/analyze")
+async def analyze(request: Request):
+    """Claude AI phân tích cổ phiếu — POST body: {question, context, system}"""
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    question = body.get("question", "Phân tích cổ phiếu này")
+    context  = body.get("context", "")
+    system   = body.get("system") or (
+        "Bạn là chuyên gia phân tích chứng khoán Việt Nam 15 năm kinh nghiệm. "
+        "Phân tích ngắn gọn, súc tích, có số liệu. Dùng bullet points với emoji. "
+        "Kết thúc bằng: Khuyến nghị MUA/GIỮ/BÁN + Giá mục tiêu + Stop loss. "
+        "Viết bằng tiếng Việt, khoảng 200-250 từ."
+    )
+
+    api_key = os.getenv("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        return JSONResponse(
+            status_code=503,
+            content={"error": "ANTHROPIC_API_KEY chưa cấu hình. Thêm vào Railway Variables."}
+        )
+
+    messages = [{"role": "user", "content": f"{context}\n\n{question}".strip()}]
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": api_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": "claude-sonnet-4-20250514",
+                    "max_tokens": 1000,
+                    "system": system,
+                    "messages": messages,
+                }
+            )
+            data = resp.json()
+            analysis = data.get("content", [{}])[0].get("text", "Không có phản hồi")
+            return {"analysis": analysis}
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Lỗi Claude API: {str(e)}"}
+        )
 
 
 if __name__ == "__main__":
@@ -92,29 +115,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=settings.PORT,
         reload=True,
-        log_level=settings.LOG_LEVEL.lower(),
     )
-# THÊM MỚI: Endpoint xử lý phân tích AI
-@app.post("/analyze")
-async def analyze_stock(request: AnalysisRequest):
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="Thiếu cấu hình ANTHROPIC_API_KEY trên Railway")
-    
-    try:
-        client = anthropic.Anthropic(api_key=api_key)
-        
-        prompt = f"""
-        Bạn là chuyên gia phân tích chứng khoán cao cấp. 
-        Hãy phân tích cổ phiếu {request.symbol} dựa trên dữ liệu sau: {request.data}.
-        Yêu cầu: Đưa ra nhận định ngắn gọn, súc tích về xu hướng và các mức hỗ trợ/kháng cự quan trọng.
-        """
-        
-        message = client.messages.create(
-            model="claude-3-sonnet-20240229",
-            max_tokens=1024,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return {"analysis": message.content[0].text}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
