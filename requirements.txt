@@ -1,0 +1,25 @@
+# ── Web framework ──────────────────────────
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+
+# ── Vietnam stock data ──────────────────────
+vnstock3>=0.3.0         # Primary: VCI + TCBS source
+vnstock>=0.2.8          # Fallback: legacy API
+
+# ── Data processing ─────────────────────────
+pandas>=2.0.0
+numpy>=1.24.0
+
+# ── Config & utilities ──────────────────────
+python-dotenv>=1.0.0
+pydantic-settings>=2.0.0
+httpx>=0.26.0
+
+# ── Optional: caching có persistence ────────
+# redis>=5.0.0          # Uncomment nếu dùng Redis cache
+# aioredis>=2.0.0
+
+# ── Optional: news crawler ──────────────────
+# httpx>=0.26.0         # Đã có ở trên
+# beautifulsoup4>=4.12.0
+# lxml>=5.0.0

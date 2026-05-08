@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: vnstock-ai-api
+    env: python
+    region: singapore          # Gần Việt Nam nhất
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: LOG_LEVEL
+        value: INFO
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: VNSTOCK_SOURCE
+        value: VCI
