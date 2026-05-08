@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from app.config import settings
+from app.config import settings, CORS_ORIGINS
 from app.routers import stocks, market
 
 logging.basicConfig(
@@ -51,7 +51,7 @@ app = FastAPI(
 # ── CORS ────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
