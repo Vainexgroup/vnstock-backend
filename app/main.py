@@ -94,3 +94,27 @@ if __name__ == "__main__":
         reload=True,
         log_level=settings.LOG_LEVEL.lower(),
     )
+# THÊM MỚI: Endpoint xử lý phân tích AI
+@app.post("/analyze")
+async def analyze_stock(request: AnalysisRequest):
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="Thiếu cấu hình ANTHROPIC_API_KEY trên Railway")
+    
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        
+        prompt = f"""
+        Bạn là chuyên gia phân tích chứng khoán cao cấp. 
+        Hãy phân tích cổ phiếu {request.symbol} dựa trên dữ liệu sau: {request.data}.
+        Yêu cầu: Đưa ra nhận định ngắn gọn, súc tích về xu hướng và các mức hỗ trợ/kháng cự quan trọng.
+        """
+        
+        message = client.messages.create(
+            model="claude-3-sonnet-20240229",
+            max_tokens=1024,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return {"analysis": message.content[0].text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
