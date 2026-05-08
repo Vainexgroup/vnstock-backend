@@ -37,6 +37,10 @@ async def analyze_stock(request: AnalysisRequest):
         "claude-3-sonnet-20240229",
         "claude-3-haiku-20240307",
         "claude-2.1" # Model đời cũ, cực kỳ dễ kết nối
+        models_to_try = [
+        "claude-3-5-sonnet-20240620",
+        "claude-3-sonnet-20240229",
+        "claude-2.1" # Đây là "phao cứu sinh" cuối cùng
     ]
 
     for model_name in models_to_try:
