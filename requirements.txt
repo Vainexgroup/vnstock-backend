@@ -24,3 +24,5 @@ httpx>=0.26.0
 # beautifulsoup4>=4.12.0
 # lxml>=5.0.0
 anthropic
+anthropic>=0.25.0
+httpx>=0.26.0
