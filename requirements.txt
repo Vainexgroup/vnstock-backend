@@ -26,3 +26,7 @@ httpx>=0.26.0
 anthropic
 anthropic>=0.25.0
 httpx>=0.26.0
+fastapi
+uvicorn
+pydantic
+anthropic
