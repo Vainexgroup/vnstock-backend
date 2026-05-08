@@ -38,6 +38,12 @@ async def analyze_stock(request: AnalysisRequest):
             max_tokens=1024,
             messages=[{"role": "user", "content": f"Phân tích mã {request.symbol} với dữ liệu: {request.data}"}]
         )
+        # Thay đổi dòng này trong file main.py của bạn
+        message = client.messages.create(
+            model="claude-2.1", 
+            max_tokens=1024,
+            messages=[{"role": "user", "content": f"Phân tích mã {request.symbol}: {request.data}"}]
+        )
         return {"analysis": message.content[0].text}
     except Exception as e:
         return {"analysis": f"Lỗi Claude: {str(e)}"}
