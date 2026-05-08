@@ -35,3 +35,9 @@ uvicorn
 pydantic
 anthropic>=0.26.0
 vnstock3
+fastapi
+uvicorn
+pydantic
+anthropic
+vnstock3
+ipython
