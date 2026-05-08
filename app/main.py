@@ -33,14 +33,8 @@ async def analyze_stock(request: AnalysisRequest):
     client = anthropic.Anthropic(api_key=api_key)
     try:
         # Dùng model cao cấp cho tài khoản đã nạp tiền
-        message = client.messages.create(
-            model="claude-3-5-sonnet-20240620",
-            max_tokens=1024,
-            messages=[{"role": "user", "content": f"Phân tích mã {request.symbol} với dữ liệu: {request.data}"}]
-        )
-        # Thay đổi dòng này trong file main.py của bạn
-        message = client.messages.create(
-            model="claude-2.1", 
+       message = client.messages.create(
+            model="claude-3-haiku-20240307", 
             max_tokens=1024,
             messages=[{"role": "user", "content": f"Phân tích mã {request.symbol}: {request.data}"}]
         )
