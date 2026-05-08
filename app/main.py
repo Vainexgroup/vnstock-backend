@@ -46,3 +46,7 @@ async def analyze_stock(request: AnalysisRequest):
             continue
             
     return {"analysis": f"Lỗi hệ thống Anthropic: {last_error}. Vui lòng đợi vài phút để tiền nạp được kích hoạt."}
+from vnstock3 import Vnstock
+# Lấy dữ liệu VCB từ sàn VCI (cập nhật từng giây khi sàn mở cửa)
+stock = Vnstock().stock(symbol="VCB", source='VCI')
+price_data = stock.quote.history(start='2026-05-08', end='2026-05-08')
