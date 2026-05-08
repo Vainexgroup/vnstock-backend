@@ -1,46 +1,46 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import anthropic
 import os
+import anthropic
 
 app = FastAPI()
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
-# Cấu hình để Lovable có thể truy cập
+
+# Mở khóa để Lovable truy cập được
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ĐỊNH DẠNG DỮ LIỆU (Bắt buộc phải có)
+# Cấu hình để Backend hiểu dữ liệu Lovable gửi sang
 class AnalysisRequest(BaseModel):
     symbol: str
     data: dict
 
-@app.get("/")
-async def root():
-    return {"message": "VNStockAI API is Live"}
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
 
-# ĐƯỜNG DẪN PHÂN TÍCH AI (Endpoint)
 @app.post("/analyze")
 async def analyze_stock(request: AnalysisRequest):
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="Thiếu cấu hình ANTHROPIC_API_KEY trên Railway")
+        return {"analysis": "Lỗi: Bạn chưa cấu hình ANTHROPIC_API_KEY trên Railway."}
+
+    client = anthropic.Anthropic(api_key=api_key)
     
     try:
-        client = anthropic.Anthropic(api_key=api_key)
-        prompt = f"Phân tích cổ phiếu {request.symbol} với dữ liệu: {request.data}. Đưa ra nhận định ngắn gọn."
+        # Gửi dữ liệu sang cho Claude xử lý
+        prompt = f"Phân tích mã chứng khoán {request.symbol} với dữ liệu này: {request.data}. Trả về nhận định ngắn gọn, súc tích."
         
         message = client.messages.create(
             model="claude-3-sonnet-20240229",
-            max_tokens=1024,
+            max_tokens=1000,
             messages=[{"role": "user", "content": prompt}]
         )
         return {"analysis": message.content[0].text}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"analysis": f"Lỗi kết nối Claude: {str(e)}"}
