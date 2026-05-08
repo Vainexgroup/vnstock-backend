@@ -6,7 +6,6 @@ import anthropic
 
 app = FastAPI()
 
-# Mở khóa để Lovable truy cập được
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,7 +14,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Cấu hình để Backend hiểu dữ liệu Lovable gửi sang
 class AnalysisRequest(BaseModel):
     symbol: str
     data: dict
@@ -28,19 +26,18 @@ def health_check():
 async def analyze_stock(request: AnalysisRequest):
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        return {"analysis": "Lỗi: Bạn chưa cấu hình ANTHROPIC_API_KEY trên Railway."}
+        return {"analysis": "Lỗi: Chưa có API Key trên Railway."}
 
     client = anthropic.Anthropic(api_key=api_key)
     
     try:
-        # Gửi dữ liệu sang cho Claude xử lý
-        prompt = f"Phân tích mã chứng khoán {request.symbol} với dữ liệu này: {request.data}. Trả về nhận định ngắn gọn, súc tích."
+        prompt = f"Phân tích mã {request.symbol} với dữ liệu: {request.data}. Nhận định ngắn gọn."
         
         message = client.messages.create(
-            model="claude-3-sonnet-20240229",
-            max_tokens=1000,
+            model="claude-3-5-sonnet-latest", # ĐÃ CẬP NHẬT TÊN MODEL Ở ĐÂY
+            max_tokens=1024,
             messages=[{"role": "user", "content": prompt}]
         )
         return {"analysis": message.content[0].text}
     except Exception as e:
-        return {"analysis": f"Lỗi kết nối Claude: {str(e)}"}
+        return {"analysis": f"Lỗi Claude: {str(e)}"}
