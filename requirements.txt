@@ -30,3 +30,7 @@ fastapi
 uvicorn
 pydantic
 anthropic
+fastapi
+uvicorn
+pydantic
+anthropic>=0.26.0
