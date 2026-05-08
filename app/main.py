@@ -5,7 +5,9 @@ import anthropic
 import os
 
 app = FastAPI()
-
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
 # Cấu hình để Lovable có thể truy cập
 app.add_middleware(
     CORSMiddleware,
