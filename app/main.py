@@ -48,3 +48,10 @@ async def analyze_stock(request: AnalysisRequest):
         except:
             continue
     return {"analysis": "Đang đợi Anthropic kích hoạt ví tiền (Tier 1)."}
+# Sửa đoạn cuối cùng trong hàm analyze_stock
+    except Exception as e:
+        last_error = str(e)
+        continue
+            
+    # Thay dòng "Đang đợi..." bằng dòng này để xem lỗi thật
+    return {"analysis": f"Lỗi thực tế từ Anthropic: {last_error}"}
