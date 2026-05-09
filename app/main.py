@@ -38,16 +38,16 @@ async def analyze_stock(request: AnalysisRequest):
 
     # Danh sách thử sai model để tránh lỗi 404
     for model_name in ["claude-3-haiku-20240307", "claude-2.1"]:
-    try: # Thẳng hàng với code phía trên
-............message = client.messages.create(
-................model=model_name,
-................max_tokens=1024,
-................messages=[{"role": "user", "content": f"Phân tích mã {request.symbol}: {real_info}"}]
-............)
-............return {"analysis": message.content[0].text, "real_stats": ratios}
-........except Exception as e: # Phải thẳng hàng với chữ 'try' phía trên
-............last_error = str(e)
-............continue # Phải thụt vào trong so với 'except'
+        try:
+            message = client.messages.create(
+                model=model_name,
+                max_tokens=1024,
+                messages=[{"role": "user", "content": f"Phân tích mã {request.symbol}: {real_info}"}]
+            )
+            return {"analysis": message.content[0].text, "real_stats": ratios}
+        except Exception as e:
+            last_error = str(e)
+            continue
     return {"analysis": "Đang đợi Anthropic kích hoạt ví tiền (Tier 1)."}
 # Sửa đoạn cuối cùng trong hàm analyze_stock
     except Exception as e:
