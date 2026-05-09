@@ -40,7 +40,10 @@ async def analyze_stock(request: AnalysisRequest):
         ratios = {}
 
     # 2. Gọi AI phân tích (Thử sai để tránh lỗi 404)
-    models = ["claude-3-haiku-20240307", "claude-3-sonnet-20240229"]
+    models = [
+    "claude-haiku-4-5-20251001",   # Nhanh, rẻ nhất
+    "claude-sonnet-4-20250514",    # Cân bằng tốt nhất — khuyến nghị
+    ]
     last_error = "Đang đợi Anthropic kích hoạt ví tiền (Tier 1)."
 
     for model_name in models:
